@@ -13,38 +13,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const helmet_1 = __importDefault(require("helmet"));
-const morgan_1 = __importDefault(require("morgan"));
-const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-const error_middlware_1 = __importDefault(require("./middlware/error.middlware"));
-const config_1 = __importDefault(require("./config"));
 const database_1 = require("./database");
-console.log(config_1.default);
-const PORT = config_1.default.port || 3000;
-// create instance server
+const auth_router_1 = __importDefault(require("./router/auth-router"));
+const cors_1 = __importDefault(require("cors"));
+const ForgotPasswordRoute_1 = __importDefault(require("./router/ForgotPasswordRoute"));
 const app = (0, express_1.default)();
-//middlware to parser incomming request
 app.use(express_1.default.json());
-//http request logger middlware
-app.use((0, morgan_1.default)("common"));
-//http security middlware
-app.use((0, helmet_1.default)());
-//apply the rate limitting middlware to all request
-app.use((0, express_rate_limit_1.default)({
-    windowMs: 60 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: "Too many requests from this IP , please try again after an hour",
-}));
-app.use(error_middlware_1.default);
+app.use((0, cors_1.default)());
+app.use(express_1.default.urlencoded({ extended: true }));
+app.use("/auth", auth_router_1.default);
+app.use("/password", ForgotPasswordRoute_1.default);
+databaseInit();
 function databaseInit() {
     return __awaiter(this, void 0, void 0, function* () {
         yield database_1.Database.initilize();
-        //start express server
-        app.listen(PORT, () => {
-            console.log(`Server is running on port : ${PORT}`);
-        });
+        app.listen(3001);
     });
 }
-exports.default = app;
