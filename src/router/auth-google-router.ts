@@ -1,5 +1,3 @@
-// authRoutes.ts
-
 import express from "express";
 import AuthGoogle from "../controller/AuthGoogle";
 import passport from "passport";

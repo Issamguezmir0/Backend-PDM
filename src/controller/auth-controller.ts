@@ -101,32 +101,7 @@ export const authenticateProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Non autorisé - Token manquant" });
     }
 
-    // const jwtSecret = process.env.JWT_SECRET?.trim();
-
-    // if (!jwtSecret) {
-    //   console.error("La clé secrète JWT n'est pas définie.");
-    //   return res.status(500).json({ message: "Erreur interne du serveur" });
-    // }
-
-    // console.log("Contenu du JWT :", token);
-    // console.log("Clé secrète avant vérification du JWT :", jwtSecret);
-
-    // Ajoutez l'algorithme explicite (HS256) lors de la vérification
-    // const decoded = jwt.verify(token, "mySecretKey", {
-    //   algorithms: ["HS256"],
-    // }) as {
-    //   id: string;
-    // };
-
-    // console.log("Décode du JWT :", decoded); // Pour débogage
-
-    // const user = await User.getUserById(decoded.id);
-
-    // if (User.isUserEmpty(user)) {
-    //   return res.status(404).json({ message: "Utilisateur non trouvé" });
-    // }
-
-    // Renvoyer toutes les données de l'utilisateur dans la réponse JSON
+    
     try {
       const decoded = jwt.verify(token, "mySecretKey");
       console.log("Decoded Payload:", decoded);
@@ -134,17 +109,7 @@ export const authenticateProfile = async (req: Request, res: Response) => {
     } catch (error) {
       console.error("Token verification failed:", error);
     }
-    // return res.json({
-    //   // id: user.id,
-    //   // fullname: user.fullname,
-    //   // adresse: user.adresse,
-    //   // email: user.email,
-    //   // cin: user.cin,
-    //   // num_tel: user.num_tel,
-    //   // img: user.img,
-    //   // age: user.age,
-    //   // ... ajoutez d'autres propriétés selon vos besoins
-    // });
+ 
   } catch (error: any) {
     console.error(
       "Erreur lors de l'authentification du profil :",

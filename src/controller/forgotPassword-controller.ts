@@ -1,4 +1,3 @@
-// Importez les dépendances nécessaires
 import { Request, Response } from "express";
 import User from "../models/user";
 import { generateResetCode, sendSMS } from "../utils/crypto";
@@ -118,7 +117,6 @@ class ForgotPasswordController {
     try {
       const { num_tel, newPassword } = req.body;
 
-      // Récupérer l'utilisateur à partir du numéro de téléphone
 
       const user = await User.getUserByNumTel(num_tel);
 
@@ -127,17 +125,14 @@ class ForgotPasswordController {
         return;
       }
       const newHashedPassword = await bcrypt.hash(newPassword, 10);
-      // await user.updatePassword(newHashedPassword);
 
-      // Mettez à jour le mot de passe dans la base de données
       const updateResult = await db
         .collection("users")
         .updateOne(
           { _id: new ObjectId(user.id) },
           { $set: { password: newHashedPassword } }
         );
-      // await user.updatePassword(newPassword);
-      //
+      
       res.json({ message: "Mot de passe réinitialisé avec succès." });
     } catch (error) {
       console.error(

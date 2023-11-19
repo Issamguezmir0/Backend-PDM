@@ -1,5 +1,3 @@
-// authController.ts
-
 import passport from 'passport';
 import { Request, Response } from 'express';
 
