@@ -30,7 +30,7 @@ const router = (0, express_1.Router)();
 const homeValidator = (0, express_validator_1.body)("task").trim().notEmpty();
 router.get("/homes", homeController.getAllHomes);
 router.post("/home", homeController.addHome);
-router.patch("/:homeId", homeValidator, homeController.updateHome);
+router.patch("/:homeId", homeController.updateHome);
 router.delete("/:homeId", homeController.deleteHome);
 router.post("/:homeId/comment", homeController.addComment);
 router.get("/:homeId/comments", homeController.getComments);

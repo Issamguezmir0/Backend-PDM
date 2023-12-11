@@ -33,7 +33,7 @@ const addHome = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const { idUser, DescriptionArticle, image, comments, likes } = req.body;
     try {
-        const home = new home_1.default(idUser, DescriptionArticle, image, likes, comments);
+        const home = new home_1.default(idUser, DescriptionArticle, image, comments, likes);
         const homes = yield home.createHome();
         res.status(200).json({ message: "Successfully added", homes: homes });
     }
@@ -77,9 +77,12 @@ const addComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const home = new home_1.default("", "", "", [], 0); // Initialize a home instance to call the addComment method
         const homes = yield home.addComment(comments, homeId);
-        res.status(200).json({ message: "Comment added successfully", homes: homes });
+        res
+            .status(200)
+            .json({ message: "Comment added successfully", homes: homes });
     }
     catch (error) {
+        console.error(error); // Log the error to the console for debugging
         res.status(400).json({ message: "Failed to add comment" });
     }
 });
@@ -89,7 +92,10 @@ const getComments = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const { homeId } = req.params;
     try {
         const home = yield home_1.default.getComments(homeId);
-        res.status(200).json({ message: "Successfully loaded comments", comments: home.comments });
+        res.status(200).json({
+            message: "Successfully loaded comments",
+            comments: home.comments,
+        });
     }
     catch (error) {
         res.status(400).json({ message: "Failed to load comments" });
@@ -102,9 +108,7 @@ const addLike = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const home = new home_1.default("", "", "", [], 0, homeId);
         const homes = yield home.addLike();
         console.log("Adding like to video with ID:", homeId);
-        res
-            .status(200)
-            .json({ message: "Successfully added like", homes: homes });
+        res.status(200).json({ message: "Successfully added like", homes: homes });
     }
     catch (error) {
         console.error("Failed to add like:", error);

@@ -25,6 +25,78 @@ class User {
         this.resetCode = resetCode;
         this.resetCodeExpiration = resetCodeExpiration;
     }
+    static getAll() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const db = database_1.Database.getDb();
+                const users = yield db.collection("users").find().toArray();
+                return users.map((user) => new User(user.fullname, user.adresse || "", user.email || "", user.cin || "", user.num_tel || "", user.password, user.img || "", user.age || "", user._id.toString(), user.resetCode, user.resetCodeExpiration));
+            }
+            catch (error) {
+                console.error("Error in getAllUsers:", error);
+                throw error;
+            }
+        });
+    }
+    static getById(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const db = database_1.Database.getDb();
+                const objectId = new mongodb_1.ObjectId(userId);
+                const user = yield db.collection("users").findOne({ _id: objectId });
+                if (user) {
+                    return new User(user.fullname, user.adresse || "", user.email || "", user.cin || "", user.num_tel || "", user.password, user.img || "", user.age || "", user._id.toString(), user.resetCode, user.resetCodeExpiration);
+                }
+                else {
+                    return User.empty;
+                }
+            }
+            catch (error) {
+                console.error("Error in getById:", error);
+                throw error;
+            }
+        });
+    }
+    static update(id, updatedUserData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const db = database_1.Database.getDb();
+                if (!id) {
+                    throw new Error("User ID is not defined.");
+                }
+                const updateResult = yield db.collection("users").updateOne({ _id: new mongodb_1.ObjectId(id) }, {
+                    $set: updatedUserData
+                });
+                // Update local object properties
+                Object.assign(this, updatedUserData);
+            }
+            catch (error) {
+                console.error("Error in update:", error);
+                throw error;
+            }
+        });
+    }
+    static delete(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const db = database_1.Database.getDb();
+                if (!id) {
+                    throw new Error("User ID is not defined.");
+                }
+                const deleteResult = yield db
+                    .collection("users")
+                    .deleteOne({ _id: new mongodb_1.ObjectId(id) });
+                console.log(deleteResult);
+                if (deleteResult.deletedCount !== 1) {
+                    throw new Error("Failed to delete the user.");
+                }
+            }
+            catch (error) {
+                console.error("Error in delete:", error);
+                throw error;
+            }
+        });
+    }
     createUser() {
         return __awaiter(this, void 0, void 0, function* () {
             const db = database_1.Database.getDb();
@@ -130,9 +202,24 @@ class User {
             }
         });
     }
+    static userExist(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const db = database_1.Database.getDb();
+                const user = yield db.collection("users").findOne({ email });
+                return !!user;
+            }
+            catch (error) {
+                console.error("Error in getUserByNumTel:", error);
+                throw error;
+            }
+        });
+    }
     static getUserById(userId) {
         return __awaiter(this, void 0, void 0, function* () {
             const db = database_1.Database.getDb();
+            console.log(userId);
+            console.log(new mongodb_1.ObjectId(userId));
             try {
                 const objectId = new mongodb_1.ObjectId(userId);
                 const user = yield db.collection("users").findOne({ _id: objectId });

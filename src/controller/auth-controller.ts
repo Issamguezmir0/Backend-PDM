@@ -85,7 +85,7 @@ export const loginController = async (req: Request, res: Response) => {
       { expiresIn: "1h" }
     );
 
-    res.status(200).json({ token: token, userId: user.id });
+    res.status(200).json({ token: token, userId: user.id, user:user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -101,7 +101,7 @@ export const authenticateProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Non autorisé - Token manquant" });
     }
 
-    
+
     try {
       const decoded = jwt.verify(token, "mySecretKey");
       console.log("Decoded Payload:", decoded);
@@ -109,7 +109,7 @@ export const authenticateProfile = async (req: Request, res: Response) => {
     } catch (error) {
       console.error("Token verification failed:", error);
     }
- 
+
   } catch (error: any) {
     console.error(
       "Erreur lors de l'authentification du profil :",

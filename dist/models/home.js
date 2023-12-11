@@ -43,9 +43,15 @@ class Home {
     updateHome() {
         return __awaiter(this, void 0, void 0, function* () {
             const db = database_1.Database.getDb();
-            yield db
-                .collection("article")
-                .updateOne({ _id: new mongodb_1.ObjectId(this.id) }, { $set: { idUser: this.idUser, DescriptionArticle: this.DescriptionArticle, image: this.image } } //CHANGE
+            yield db.collection("article").updateOne({ _id: new mongodb_1.ObjectId(this.id) }, {
+                $set: {
+                    idUser: this.idUser,
+                    DescriptionArticle: this.DescriptionArticle,
+                    image: this.image,
+                    comments: this.comments,
+                    likes: this.likes,
+                },
+            } //CHANGE
             );
             const homes = yield Home.getHomes();
             return homes;
@@ -79,11 +85,13 @@ class Home {
     }
     addComment(comments, homeId) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Comment:', comments);
-            console.log('Home ID:', homeId);
+            console.log("Comment:", comments);
+            console.log("Home ID:", homeId);
             if (comments !== null && comments !== undefined) {
                 const db = database_1.Database.getDb();
-                yield db.collection("article").updateOne({ _id: new mongodb_1.ObjectId(homeId) }, { $push: { comments: comments } });
+                yield db
+                    .collection("article")
+                    .updateOne({ _id: new mongodb_1.ObjectId(homeId) }, { $push: { comments: comments } });
             }
             const homes = yield Home.getHomes();
             return homes;
@@ -93,7 +101,9 @@ class Home {
     static getComments(homeId) {
         return __awaiter(this, void 0, void 0, function* () {
             const db = database_1.Database.getDb();
-            const document = yield db.collection("article").findOne({ _id: new mongodb_1.ObjectId(homeId) });
+            const document = yield db
+                .collection("article")
+                .findOne({ _id: new mongodb_1.ObjectId(homeId) });
             if (!document) {
                 throw new Error("Home not found");
             }

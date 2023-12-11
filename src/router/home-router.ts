@@ -7,7 +7,7 @@ const homeValidator = body("task").trim().notEmpty();
 
 router.get("/homes", homeController.getAllHomes);
 router.post("/home", homeController.addHome);
-router.patch("/:homeId", homeValidator, homeController.updateHome);
+router.patch("/:homeId", homeController.updateHome);
 router.delete("/:homeId", homeController.deleteHome);
 
 router.post("/:homeId/comment", homeController.addComment);

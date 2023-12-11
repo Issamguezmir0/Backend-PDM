@@ -12,97 +12,115 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const user_1 = __importDefault(require("../models/user"));
-const crypto_1 = require("../utils/crypto");
-const mongodb_1 = require("mongodb");
+exports.resetPassword = exports.verifyResetCode = exports.forgotPassword = void 0;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const database_1 = require("../database");
-class ForgotPasswordController {
-    static forgotPassword(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { num_tel } = req.body;
-                console.log("Numéro de téléphone reçu:", num_tel);
-                const user = yield user_1.default.getUser(num_tel);
-                console.log("Utilisateur trouvé:", user);
-                if (user === user_1.default.empty) {
-                    console.log("Utilisateur non trouvé. Retour à l'utilisateur non trouvé.");
-                    return res.status(404).json({ message: "Utilisateur non trouvé." });
-                }
-                const resetCode = (0, crypto_1.generateResetCode)();
-                const resetCodeExpiration = new Date(Date.now() + 10 * 60 * 1000);
-                yield user.updateResetCode(resetCode, resetCodeExpiration);
-                console.log("Code de réinitialisation généré et enregistré:", resetCode);
-                yield (0, crypto_1.sendSMS)(num_tel, `Votre code de réinitialisation est : ${resetCode}`);
-                console.log("SMS envoyé avec succès.");
-                return res.json({
-                    message: "Code de réinitialisation envoyé avec succès.",
-                });
-            }
-            catch (error) {
-                console.error("Erreur lors de l'envoi du code de réinitialisation :", error);
-                return res.status(500).json({
-                    message: "Erreur serveur lors de la demande de réinitialisation.",
-                });
-            }
+const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const db = database_1.Database.getDb();
+    const user = yield db.collection("users").findOne({ email: req.body.email });
+    if (user) {
+        const randomNumber = randomIntBetween(1000, 9999);
+        const success = yield sendEmail({
+            from: process.env.GMAIL_USER,
+            to: req.body.email,
+            subject: "Password reset",
+            html: `<h3>You have requested to reset your password</h3><p>Your reset code is : <b style='color : #7b2bf1'>${randomNumber}</b></p>`,
+        }).catch((error) => {
+            console.log(error);
+            return res.status(400).json({ message: "Email could not be sent" });
         });
+        // token creation
+        const token = yield generateResetToken(randomNumber, req.body.email);
+        if (success) {
+            return res.status(200).json({ token });
+        }
+        else {
+            return res.status(400).json({ message: "Email could not be sent" });
+        }
     }
-    static verifyCode(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { num_tel, resetCode } = req.body;
-                const user = yield user_1.default.getUser(num_tel);
-                console.log("Numéro de téléphone reçu:", num_tel);
-                console.log("Utilisateur trouvé:", user);
-                if (user_1.default.isUserEmpty(user) ||
-                    !user.isResetCodeValid(resetCode, new Date())) {
-                    console.log("Code de réinitialisation invalide ou expiré.");
-                    console.log("Reset code in the database:", user.resetCode);
-                    console.log("Reset code expiration in the database:", user.resetCodeExpiration);
-                    res
-                        .status(400)
-                        .json({ message: "Code de réinitialisation invalide ou expiré." });
-                    return;
-                }
-                console.log("Avant updateResetCode - Reset code in the database:", user.resetCode);
-                console.log("Avant updateResetCode - Reset code expiration in the database:", user.resetCodeExpiration);
-                yield user.updateResetCode("nouveauCode", new Date());
-                console.log("Après updateResetCode - Reset code in the database:", user.resetCode);
-                console.log("Après updateResetCode - Reset code expiration in the database:", user.resetCodeExpiration);
-                console.log("Code de réinitialisation vérifié avec succès.");
-                res.json({ message: "Code de réinitialisation vérifié avec succès." });
-            }
-            catch (error) {
-                console.error("Erreur lors de la vérification du code de réinitialisation :", error);
-                res.status(500).json({
-                    message: "Erreur serveur lors de la vérification du code de réinitialisation.",
-                });
-            }
+    else {
+        return res.status(400).json({ message: "User does not exist" });
+    }
+});
+exports.forgotPassword = forgotPassword;
+const verifyResetCode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { resetCode, token } = req.body;
+    let verifiedToken;
+    try {
+        verifiedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+    }
+    catch (e) {
+        console.log(e);
+        return res.status(500).json({ message: "Could not verify code" });
+    }
+    if (String(verifiedToken.resetCode) === resetCode) {
+        return res.status(200).json({ message: "Success" });
+    }
+    else {
+        return res.status(400).json({ message: "Incorrect reset code" });
+    }
+});
+exports.verifyResetCode = verifyResetCode;
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token, plainPassword } = req.body;
+    let verifiedToken;
+    try {
+        verifiedToken = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+    }
+    catch (e) {
+        console.log(e);
+        return res.status(500).json({ message: "Could not verify code" });
+    }
+    try {
+        const db = database_1.Database.getDb();
+        yield db.collection("users").findOneAndUpdate({ email: verifiedToken.email }, {
+            $set: {
+                password: yield bcrypt_1.default.hash(plainPassword, 10),
+            },
         });
+        return res.status(200).json({ message: "Success" });
     }
-    static changedPassword(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const db = database_1.Database.getDb();
-            try {
-                const { num_tel, newPassword } = req.body;
-                const user = yield user_1.default.getUserByNumTel(num_tel);
-                if (user_1.default.isUserEmpty(user)) {
-                    res.status(404).json({ message: "Utilisateur non trouvé." });
-                    return;
-                }
-                const newHashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
-                const updateResult = yield db
-                    .collection("users")
-                    .updateOne({ _id: new mongodb_1.ObjectId(user.id) }, { $set: { password: newHashedPassword } });
-                res.json({ message: "Mot de passe réinitialisé avec succès." });
-            }
-            catch (error) {
-                console.error("Erreur lors de la réinitialisation du mot de passe :", error);
-                res.status(500).json({
-                    message: "Erreur serveur lors de la réinitialisation du mot de passe.",
-                });
-            }
-        });
+    catch (error) {
+        console.log(error);
+        return res.status(400).json({ message: "Error" });
     }
-}
-exports.default = ForgotPasswordController;
+});
+exports.resetPassword = resetPassword;
+const sendEmail = (mailOptions) => __awaiter(void 0, void 0, void 0, function* () {
+    let transporter = yield nodemailer_1.default.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD,
+        },
+    });
+    yield transporter.verify(function (error) {
+        if (error) {
+            console.log(error);
+            console.log("Server not ready");
+        }
+        else {
+            console.log("Server is ready to take our messages");
+        }
+    });
+    yield transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+            return false;
+        }
+        else {
+            console.log("Email sent: " + info.response);
+            return true;
+        }
+    });
+    return true;
+});
+const randomIntBetween = (min, max) => {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+};
+const generateResetToken = (resetCode, email) => {
+    return jsonwebtoken_1.default.sign({ resetCode, email }, process.env.JWT_SECRET, { expiresIn: "100000000" } // in Milliseconds (3600000 = 1 hour)
+    );
+};

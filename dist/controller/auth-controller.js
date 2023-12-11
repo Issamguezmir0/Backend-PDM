@@ -71,7 +71,7 @@ const loginController = (req, res) => __awaiter(void 0, void 0, void 0, function
                 .json({ message: "Wrong password, enter correct one." });
         }
         const token = jsonwebtoken_1.default.sign({ user }, "mySecretKey", { expiresIn: "1h" });
-        res.status(200).json({ token: token, userId: user.id });
+        res.status(200).json({ token: token, userId: user.id, user: user });
     }
     catch (error) {
         console.error(error);
